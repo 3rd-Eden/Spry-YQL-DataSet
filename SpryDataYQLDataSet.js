@@ -11,7 +11,7 @@
 		this.timeout = 10000;
 		this.query = query;
 		this.prefix = "yql_";
-		this.path = path || "";
+		this.path = path || false;
 		this.doc = null;
 		this.preparseFunc = null;
 		
@@ -155,12 +155,18 @@
 		if( this.preparseFunc )
 			result = this.preparseFunc( result );
 		
+		// execute the path, in search for data :)!
+		if( this.path )
+			result = Spry.Utils.getObjectByName( this.path, result );
+		
 		// todo process the data based on path
 		
+		this.data = dataset.concat( result );
+		this.dataHash = hash;
 		
 		// process completed and notify the user
 		this.dataWasLoaded = true;
-		this.pendingRequest = false;
+		this.pendingRequest = null;
 		
 		this.syncColumnTypesToData();
 		this.applyColumnTypes();
@@ -209,4 +215,21 @@
 		Spry.Data.YQLDataSet.receiver[ that.prefix + "" + id ] = function(){ delete Spry.Data.YQLDataSet.receiver[ that.prefix + "" + id ]; }; 
 		
 	}
+	
+	// modified from the origional to be used with a context argument to search for "paths"
+	Spry.Utils.getObjectByName = function( name, context ){
+		var result = null,
+			lu = context || window, objPath, i, length;
+			
+		if (name) {
+			
+			objPath = name.split(".");
+			
+			for ( i = 0, length = objPath.length; lu && i < length; i++ ){
+				result = lu[ objPath[i] ];
+				lu = result;
+			}
+		}
+		return result;
+	};
 })()
