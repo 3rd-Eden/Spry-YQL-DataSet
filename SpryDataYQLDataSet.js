@@ -34,7 +34,7 @@
 				q: this.query,
 				format: this.format,
 				env: this.env,
-				callback: "Spry.Data.YQLDataSet.receiver." + this.prefix + "" + id, 
+				callback: "Spry.Data.YQLDataSet.receiver." + this.prefix + "" + id 
 			},
 			
 			// reference to self, so we can execute the data
@@ -50,15 +50,15 @@
 		reciever = Spry.Data.YQLDataSet.receiver[ this.prefix + "" + id ] = function( data ){
 			// clear the timeout
 			clearTimeout( timeouttimer );
-			
+						
 			// do we have errors
 			if( data.error ){
 				that.notifyObservers( "onLoadError", data.error );
 			}
 			
 			// process the data
-			if( data.query ){
-				callback.call( that, data.query );
+			if( data.results || data.query ){
+				callback.call( that, data.results || data.query );
 			}
 			
 			// clean up
@@ -146,7 +146,8 @@
 		
 		var dataset = [],	// we gonna store the rows in this
 			hash = {},		// our datahash
-			result = data.results ? data.results : data;
+			result = data.results ? data.results : data, // check for potential data locations
+			i = 0, length, tmp;
 			
 		/*
 			As we have no indication on how to parse the data we depend on the users to parse the
@@ -159,9 +160,35 @@
 		if( this.path )
 			result = Spry.Utils.getObjectByName( this.path, result );
 		
-		// todo process the data based on path
 		
-		this.data = dataset.concat( result );
+		
+		if( !result || Object.prototype.toString.call( result ) !== "[object Array]" ){
+			// Create dummy data if we are not dealing with an array :)
+			dataset.push( 
+						(
+							hash[0] = {
+									column0:result, 
+									ds_rowID: 0 
+									}
+							) 
+					);
+		} else {
+			// process the rest of the shizzle, as we are dealing with an array
+			for( length = result.length; i < length; i++ ){
+				
+				// make sure we are only storing objects in our dataset
+				tmp = Spry.Data.YQLDataSet.flattenObject( result[i] );
+				tmp.ds_RowID = i;
+				
+				// add it to our set
+				dataset.push( ( hash[i] = tmp ) );
+			}
+		}
+		
+		// todo process the data based on path
+		//dataset = dataset.concat( result );
+		
+		this.data = dataset;
 		this.dataHash = hash;
 		
 		// process completed and notify the user
@@ -192,6 +219,7 @@
 		// in any other row.
 		
 		// this snipped is based on the JSON Dataset version :), but with 1 less fn call ;)
+		// see http://labs.adobe.com/technologies/spry/includes/SpryJSONDataSet.js for license
 			
 		var row = this.data[0], 
 			colName, type;
@@ -199,6 +227,7 @@
 		for ( colName in row ){
 			if( !this.columnTypes[ colName ] ) {
 				type = typeof row[ colName ] == "number";
+				
 				if ( type )
 					this.setColumnType( colName, type );
 			}
@@ -214,9 +243,9 @@
 		// ignore the rest, remove reciever from memory
 		Spry.Data.YQLDataSet.receiver[ that.prefix + "" + id ] = function(){ delete Spry.Data.YQLDataSet.receiver[ that.prefix + "" + id ]; }; 
 		
-	}
+	};
 	
-	// modified from the origional to be used with a context argument to search for "paths"
+	// modified from the origional to be used with a context argument to search for "paths" inside objects
 	Spry.Utils.getObjectByName = function( name, context ){
 		var result = null,
 			lu = context || window, objPath, i, length;
@@ -232,4 +261,5 @@
 		}
 		return result;
 	};
+	
 })()
