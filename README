@@ -1,16 +1,13 @@
-<h2>Spry.Data.YQLDataSet</h2>
+Spry.Data.YQLDataSet
 
-<p> A extension for Spry Data Sets. </p>
+A extension for Spry Data Sets
 
-<b>Twitter example</b>
-<pre class="console">
+Twitter example
 var ds1 = new Spry.Data.YQLDataSet( 'select * from twitter.user.timeline where (id = "3rdEden")', "entry", { timeout: 10000 } );
-</pre>
 
-<b>Reading and processing external feeds</b>
-<pre class="console">
+Reading and processing external feeds:
+
 var ds3 = new Spry.Data.YQLDataSet( 'select * from feed where url="http://blogs.adobe.com/spryteam/atom.xml" LIMIT 5', "entry" );
-
 ds3.addObserver({
 	onPostLoad:function(){
 		var data = ds3.data,
@@ -26,4 +23,3 @@ ds3.addObserver({
 		}
 	}
 });
-</pre>
