@@ -1,0 +1,18 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>YQL Twitter test</title>
+<script type="text/javascript" src="http://config.spry-it.com/js?f=1.7/data/1.6.1/jsondataset/nestedjsondataset"></script>
+<script type="text/javascript" src="../../SpryDataYQLDataSet.js"></script>
+<script type="text/javascript">
+	var ds1 = new Spry.Data.YQLDataSet( 'select * from twitter.user.timeline where (id = "3rdEden")', "entry", { timeout: 10000 } );
+</script>
+</head>
+
+<body>
+<div spry:region="ds1" spry:repeat="ds1">
+	<p>{title}</p>
+</div>
+</body>
+</html>
