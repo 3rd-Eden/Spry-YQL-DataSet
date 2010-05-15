@@ -1,25 +1,11 @@
-Spry.Data.YQLDataSet
+                                        
+  _|_|_|                                
+_|        _|_|_|    _|  _|_|  _|    _|  
+  _|_|    _|    _|  _|_|      _|    _|  
+      _|  _|    _|  _|        _|    _|  
+_|_|_|    _|_|_|    _|          _|_|_|  
+          _|                        _|  
+          _|                    _|_|    
 
-A extension for Spry Data Sets
-
-Twitter example
-var ds1 = new Spry.Data.YQLDataSet( 'select * from twitter.user.timeline where (id = "3rdEden")', "entry", { timeout: 10000 } );
-
-Reading and processing external feeds:
-
-var ds3 = new Spry.Data.YQLDataSet( 'select * from feed where url="http://blogs.adobe.com/spryteam/atom.xml" LIMIT 5', "entry" );
-ds3.addObserver({
-	onPostLoad:function(){
-		var data = ds3.data,
-			i = data.length;
-			
-		// loop over the data	
-		while( i-- ){
-			// as we can just modify the data as we like
-			data[i].author = data[i].author.name;
-			
-			// you don't have to use existing data reference, just create a new one on the fly
-			data[i].url = data[i].link.href;
-		}
-	}
-});
+A YQL Powered Spry Data Set. 
+See the Wiki for more information.
