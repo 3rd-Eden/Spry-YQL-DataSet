@@ -1,3 +1,4 @@
+/* Copyright Arnout Kazemier, license: github.com/3rd-Eden/Spry-YQL-DataSet */
 (function(){
 	if( !Spry || !Spry.Data ){
 		return alert( "Spry.Data.YQLDataSet depends on SpryData.js to loaded in advance." )
@@ -297,6 +298,15 @@
 			}
 		}
 		return result;
+	};
+	
+	// this little snippet introduces the sprystate="timeout" functionality so you can display a seperate state when
+	// your dataset has timed out	
+	Spry.Data.Region.prototype.onTimeOut = function(){
+		 if( this.currentState != "timeout" )
+			this.setState( "timeout" );
+		
+		Spry.Data.Region.notifyObservers( "onTimeOut", this );
 	};
 	
 })()
