@@ -1,0 +1,20 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>YQL Twitter test</title>
+<script type="text/javascript" src="http://config.spry-it.com/js?f=1.7/data"></script>
+<script type="text/javascript" src="../../SpryDataYQLDataSet.js"></script>
+<script type="text/javascript">
+	var ds1 = new Spry.Data.YQLDataSet( 'select * from github.user.info where (id = "3rd-Eden")', "user" );
+</script>
+</head>
+
+<body>
+<div spry:region="ds1">
+	<p spry:if="'{name}' != ''">Using path "user" to display the name {name}</p>
+    <p spry:if="'{type}' == 'datetime'">Using path "created-at" to display the content {content}</p>
+</div>
+<button onclick="ds1.setPath('user');">Path to "user"</button> <button onClick="ds1.setPath('user.created-at');">Path to "user.created-at"</button>
+</body>
+</html>

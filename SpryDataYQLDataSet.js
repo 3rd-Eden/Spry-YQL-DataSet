@@ -1,6 +1,6 @@
 (function(){
 	if( !Spry || !Spry.Data ){
-		return alert( "Spry.Data.YQLDataSet depends on SpryData.js to loaded in advance" )
+		return alert( "Spry.Data.YQLDataSet depends on SpryData.js to loaded in advance." )
 	}
 	
 	Spry.Data.YQLDataSet = function( query, path, options ){
@@ -14,6 +14,7 @@
 		this.path = path || false;
 		this.doc = null;
 		this.preparseFunc = null;
+		this.diagnostics = false;
 		
 		Spry.Data.DataSet.call( this, options );
 	};
@@ -34,6 +35,7 @@
 				q: this.query,
 				format: this.format,
 				env: this.env,
+				diagnostics: this.diagnostics,
 				callback: "Spry.Data.YQLDataSet.receiver." + this.prefix + "" + id 
 			},
 			
@@ -82,7 +84,7 @@
 			url.push( tmp + '=' + encodeURIComponent( parameters[ tmp ] ) );
 		}
 		
-		url = this.YQLServer + url.join("&");
+		url = this.YQLServer + url.join( "&" );
 		
 		reciever.script = document.createElement( "script" );
 		reciever.script.type = "text/javascript";
@@ -109,37 +111,6 @@
 		}
 	};
 	
-	/*
-		By using a JSON data set based setup we can hopefully attach the nestedJSON dataset on
-		the YQLDataSet. 
-	*/
-	Spry.Data.YQLDataSet.flattenObject = function( obj, basename ){
-		var row = {};
-		
-		if( typeof obj == "object" ){
-			Spry.Data.YQLDataSet.copyProps( row, obj );
-		} else {
-			row[ basename || "column0" ] = obj;
-		}
-		
-		row.ds_JSONObject = obj;
-		return row;
-	};
-	
-	Spry.Data.YQLDataSet.copyProps = function( target, source, ignore ){
-		if( target && source ){			
-			for( var row in source){
-				if( ignore && typeof source[ row ] == "object" ){
-					continue;
-				}
-				
-				target[ row ] = source[ row ];
-			}
-		}
-		
-		return target;
-	};
-	
 	Spry.Data.YQLDataSet.prototype.loadDataIntoDataSet = function loadDataIntoDataSet( data ){
 		
 		this.doc = data;
@@ -155,23 +126,31 @@
 		*/
 		if( this.preparseFunc )
 			result = this.preparseFunc( result );
-		
+				
 		// execute the path, in search for data :)!
 		if( this.path )
 			result = Spry.Utils.getObjectByName( this.path, result );
-		
-		
-		
+						
 		if( !result || Object.prototype.toString.call( result ) !== "[object Array]" ){
+			
 			// Create dummy data if we are not dealing with an array :)
-			dataset.push( 
-						(
-							hash[0] = {
-									column0:result, 
-									ds_rowID: 0 
-									}
-							) 
-					);
+			// if we are dealing with an object, we are going to flatten it and serve it as one result
+			if( typeof result !== "object" ){
+				dataset.push( 
+							(
+								hash[0] = {
+										column0:result, 
+										ds_rowID: 0 
+										}
+								) 
+						);
+			} else {
+				tmp = Spry.Data.YQLDataSet.flattenObject( result );
+				tmp.ds_RowID = i;
+				
+				// add it to our set
+				dataset.push( ( hash[i] = tmp ) );
+			}
 		} else {
 			// process the rest of the shizzle, as we are dealing with an array
 			for( length = result.length; i < length; i++ ){
@@ -185,9 +164,7 @@
 			}
 		}
 		
-		// todo process the data based on path
-		//dataset = dataset.concat( result );
-		
+		// stuff the results in the dataset
 		this.data = dataset;
 		this.dataHash = hash;
 		
@@ -245,14 +222,74 @@
 		
 	};
 	
+	// return the current query
+	Spry.Data.YQLDataSet.prototype.getQuery = function getQuery(){
+		return this.query;
+	};
+	
+	// set a new query
+	Spry.Data.YQLDataSet.prototype.setQuery = function setQuery( query ){
+		this.query = query;
+		this.dataWasLoaded = false;
+	};
+	
+	// returns the current path
+	Spry.Data.YQLDataSet.prototype.getPath = function getPath(){
+		return this.path;
+	};
+	
+	// set a new path and update the dataset
+	Spry.Data.YQLDataSet.prototype.setPath = function setPath( path ){
+		if( this.path != path ){
+			this.path = path;
+			
+			// this allows us to actually update our dataset without having to do a new request
+			if( this.dataWasLoaded && this.doc ){
+				this.notifyObservers( "onPreLoad" );
+				this.loadDataIntoDataSet( this.doc );
+			}
+		}
+	};
+	
+	/*
+		By using a JSON data set based setup we can hopefully attach the nestedJSON dataset on
+		the YQLDataSet. 
+	*/
+	Spry.Data.YQLDataSet.flattenObject = function flattenObject( obj, basename ){
+		var row = {};
+		
+		if( typeof obj == "object" ){
+			Spry.Data.YQLDataSet.copyProps( row, obj );
+		} else {
+			row[ basename || "column0" ] = obj;
+		}
+		
+		row.ds_JSONObject = obj;
+		return row;
+	};
+	
+	Spry.Data.YQLDataSet.copyProps = function copyProps( target, source, ignore ){
+		if( target && source ){			
+			for( var row in source){
+				if( ignore && typeof source[ row ] == "object" ){
+					continue;
+				}
+				
+				target[ row ] = source[ row ];
+			}
+		}
+		
+		return target;
+	};
+	
 	// modified from the origional to be used with a context argument to search for "paths" inside objects
-	Spry.Utils.getObjectByName = function( name, context ){
+	Spry.Utils.getObjectByName = function getObjectByName( name, context ){
 		var result = null,
 			lu = context || window, objPath, i, length;
 			
 		if (name) {
 			
-			objPath = name.split(".");
+			objPath = name.split( "." );
 			
 			for ( i = 0, length = objPath.length; lu && i < length; i++ ){
 				result = lu[ objPath[i] ];
