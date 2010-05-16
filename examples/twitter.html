@@ -1,0 +1,57 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>Twitter</title>
+<script type="text/javascript" src="http://config.spry-it.com/js?f=1.7/data"></script>
+<script type="text/javascript" src="../SpryDataYQLDataSet.js"></script>
+<script type="text/javascript">
+var dsTwitter = new Spry.Data.YQLDataSet( 'select * from twitter.user.timeline where (id = "3rdEden")', "entry", { timeout: 5000 } );
+dsTwitter.addObserver({
+	onPostLoad:function( ds ){
+		var data = ds.data,
+			i = data.length;
+				
+		// transform data	
+		while( i-- ){
+			// create a new data reference to store our changes
+			data[i].tweet = data[i].title
+				// The content is prefixed with my username, DELETE, lal \o/
+				.replace( /^(3rdEden\: )/, '' )
+				// the urls are not linked, so find urls and make them in to urls
+				.replace( /((?:http|https):\/\/[a-z0-9\/\?=_#&%~-]+(\.[a-z0-9\/\?=_#&%~-]+)+)|(www(\.[a-z0-9\/\?=_#&%~-]+){2,})/gi, function( url ){
+					return '<a href="' + url + '">' + url + '</a>';
+				})
+				// usernames aren't linked either, this will fix it
+				.replace (/[@]+[A-Za-z0-9-_]+/g, function( username ) {
+					return '<a href="http://twitter.com/' + username.replace( '@', '' ) + '">' + username + '</a>';
+				})
+				// hashtags, as you would have guessed they aren't linked either
+				.replace(/[#]+[A-Za-z0-9-_]+/g, function( hash ) {
+					return '<a href="https://twitter.com/search?q=%23' + hash.replace( '#', '' ) + '">' + hash + '</a>';
+				}); 
+		}
+	}
+});
+</script>
+</head>
+
+<body>
+<div spry:region="dsTwitter">
+	<div spry:state="ready">
+    	<ul>
+        	<li spry:repeat="dsTwitter" spry:even="even">{tweet}</li>
+       	</ul>
+    </div>
+    <div spry:state="error">
+    	<p>Oh dear, an error. Better luck next time.</p>
+    </div>
+    <div spry:state="timeout">
+    	<p>Seems like twitter's fail wale is active again</p>
+    </div>
+    <div spry:state="loading">
+    	<p>Loading @3rdEden's tweets</p>
+    </div>
+</div>
+</body>
+</html>
