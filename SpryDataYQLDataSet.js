@@ -28,7 +28,7 @@
 	
 	// stores all public callbacks
 	Spry.Data.YQLDataSet.receiver = {};
-	
+		
 	Spry.Data.YQLDataSet.prototype.yql = function query( callback ){
 		
 		var id = ++Spry.Data.YQLDataSet.id,
@@ -43,17 +43,24 @@
 			// reference to self, so we can execute the data
 			that = this,
 			
+			// speeds up references to document
+			doc = document,
+			
 			// and we will fill up these variables later on
-			url, reciever, tmp, timeouttimer;
+			url, reciever, tmp, timeoutimer;
 		
 		// ability to specify a other callback 
 		callback = callback || this.loadDataIntoDataSet;
 		
 		// create a public callback for the query
-		reciever = Spry.Data.YQLDataSet.receiver[ this.prefix + "" + id ] = function( data ){
+		reciever = Spry.Data.YQLDataSet.receiver[ this.prefix + "" + id ] = function( data ){			
 			// clear the timeout
-			clearTimeout( timeouttimer );
-						
+			reciever.done = true;
+			
+			// IE doesn't recognise my timeout.. 
+			if( timeoutimer )
+				clearTimeout( timeoutimer );
+			
 			// do we have errors
 			if( data.error ){
 				that.notifyObservers( "onLoadError", data.error );
@@ -66,18 +73,14 @@
 			
 			// clean up
 			try{
-				// shortcut to the reciever
-				var cleanup = Spry.Data.YQLDataSet.receiver[ that.prefix + "" + id ];
-				
 				// remove the script from the dom
-				cleanup.script.parentNode.removeChild( cleanup.script );
-				cleanup = null;
+				reciever.script.parentNode.removeChild( reciever.script );
+				reciever = null;
 				
 				// remove from the array
 				delete Spry.Data.YQLDataSet.receiver[ that.prefix + "" + id ];
 			} catch( failure ){}
 		};
-		
 		
 		// construct the url
 		url = [];
@@ -87,7 +90,8 @@
 		
 		url = this.YQLServer + url.join( "&" );
 		
-		reciever.script = document.createElement( "script" );
+		// setup the JSONP call
+		reciever.script = doc.createElement( "script" );
 		reciever.script.type = "text/javascript";
 		reciever.script.src = url;
 		reciever.script.setAttribute( "async", true );
@@ -96,10 +100,11 @@
 		this.notifyObservers( "onPreLoad" );
 		
 		// find a target to append to, there is always one script on the page.. or we couldn't be executing this :)!
-		document.getElementsByTagName( "script" )[0].appendChild( reciever.script );
+		tmp = doc.getElementsByTagName( "script" )[0];
+		tmp.parentNode.insertBefore( reciever.script, tmp );
 		
 		// set our timeout
-		timeouttimer = setTimeout( function(){ that.timedOut( reciever, id ) }, this.timeout );
+		timeoutimer = setTimeout( function(){ that.timedOut( reciever, id ) }, this.timeout );
 		
 	};
 	
@@ -196,7 +201,7 @@
 		// for a specific column has the same type as a value in the same column
 		// in any other row.
 		
-		// this snipped is based on the JSON Dataset version :), but with 1 less fn call ;)
+		// this snipped is based on the JSON Dataset version :), but with 1 less fn call for the data ;)
 		// see http://labs.adobe.com/technologies/spry/includes/SpryJSONDataSet.js for license
 			
 		var row = this.data[0], 
@@ -214,12 +219,21 @@
 	
 	// call a timeout instance
 	Spry.Data.YQLDataSet.prototype.timedOut = function timedOut( reciever, id ){		
-		var that = this;
-		this.notifyObservers( "onTimeOut" );
-		// remove script
-		reciever.script.parentNode.removeChild( reciever.script );
-		// ignore the rest, remove reciever from memory
-		Spry.Data.YQLDataSet.receiver[ that.prefix + "" + id ] = function(){ delete Spry.Data.YQLDataSet.receiver[ that.prefix + "" + id ]; }; 
+		if( !reciever ) return;
+		
+		var that = this,
+			script = reciever.script, parent;
+		
+		if( !reciever.done ){
+			this.notifyObservers( "onTimeOut" );
+			
+			// remove script
+			if( script && ( parent = script.parent ) )
+			
+				parent.removeChild( reciever.script );
+			// ignore the rest, remove reciever from memory
+			Spry.Data.YQLDataSet.receiver[ that.prefix + "" + id ] = function(){ delete Spry.Data.YQLDataSet.receiver[ that.prefix + "" + id ]; }; 
+		}
 		
 	};
 	
