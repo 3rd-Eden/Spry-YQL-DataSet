@@ -47,7 +47,7 @@
 			doc = document,
 			
 			// and we will fill up these variables later on
-			url, reciever, tmp, timeoutimer;
+			url, reciever, tmp, timeouttimer;
 		
 		// ability to specify a other callback 
 		callback = callback || this.loadDataIntoDataSet;
@@ -58,8 +58,8 @@
 			reciever.done = true;
 			
 			// IE doesn't recognise my timeout.. 
-			if( timeoutimer )
-				clearTimeout( timeoutimer );
+			if( timeouttimer )
+				clearTimeout( timeouttimer );
 			
 			// do we have errors
 			if( data.error ){
@@ -104,7 +104,7 @@
 		tmp.parentNode.insertBefore( reciever.script, tmp );
 		
 		// set our timeout
-		timeoutimer = setTimeout( function(){ that.timedOut( reciever, id ) }, this.timeout );
+		timeouttimer = setTimeout( function(){ that.timedOut( reciever, id ) }, this.timeout );
 		
 	};
 	
