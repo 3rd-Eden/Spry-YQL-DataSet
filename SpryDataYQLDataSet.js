@@ -1,4 +1,4 @@
-/* Copyright Arnout Kazemier, license: github.com/3rd-Eden/Spry-YQL-DataSet */
+/* Copyright Arnout Kazemier, license: github.com/3rd-Eden/Spry-YQL-DataSet, version: 1.0 */
 (function(){
 	if( !Spry || !Spry.Data ){
 		return alert( "Spry.Data.YQLDataSet depends on SpryData.js to loaded in advance." )
