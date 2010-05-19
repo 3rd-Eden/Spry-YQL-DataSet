@@ -1,0 +1,96 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>YQL, Google, Spry, Sushi, MAP mashup</title>
+<script src="http://maps.google.com/maps/api/js?sensor=false"></script>
+<script type="text/javascript" src="http://config.spry-it.com/js?f=1.7/data/1.6.1/jsondataset/nestedjsondataset/tooltip"></script>
+<script type="text/javascript" src="../SpryDataYQLDataSet.js"></script>
+</head>
+<body>
+<!-- 
+If you have a reference to your dataset inside your HTML, Spry will automatically load your data set.
+This way we also know when our data is fully parsed and loaded. When we have that information we can
+load in a google map inside the region using the onPostUpdate observer for regions.
+-->
+<section id="region" spry:region="dsSushi dsGeo" style="width:600px; height:300px; display:block">
+	<div spry:state="error">Failed to load the required data.</div>
+    <div spry:state="loading">Loading them tasty sushi bars in San Francisco</div>
+    <div spry:state="ready">The Google map will actually replace all this contents if it's successfully loaded</div>
+</section>
+<script type="text/javascript">
+/*
+You don't have to have your constructor in the head of your page, moving script to the end of the body
+will actually improve rendering on of your website. Making it more responsive for the end users. 
+*/
+var dsSushi = new Spry.Data.YQLDataSet( 'select * from local.search where query="sushi" and location="san francisco, ca"', "Result", { timeout: 5000 } ),
+	dsCategory = new Spry.Data.NestedJSONDataSet( dsSushi, "Categories.Category" ),
+	dsGeo = new Spry.Data.YQLDataSet( 'select * from geo.places where text="san francisco, ca"', "place.centroid" );
+
+Spry.Data.Region.addObserver( "region", {
+	onPostUpdate:function( observer, region ){
+		// Because we have multiple states, the onPostUpdate will be called each time a state changes
+		// this would mean we will create 2 Google maps, one when are in loading and one when we are ready or failed. 
+		if( region.state !== "ready" ) 
+			return;
+		
+		// Well as this is a map based application no need to continue if we don't have the required information.. 
+		if( !window.google || !window.google.maps )
+			// region.region points to the same result as Spry.Data.getRegion( "region" ) so we use this instead
+			return region.region.setState( "error" );
+		
+		
+		// We create a YQL query that gets the GEO locations for san francisco for us, we can use the center information for that query
+		// to position the Google map to the center. So we get the data, you can either use dsGeo.getData() or directly access the data
+		// personally i like to directly access the data, as it saves function execution. :)
+		var geo = dsGeo.data[0],
+		
+			// Next we construct a new Google map, because inside the Spry.Data.Region observer we have access to the region information
+			// we can access the regionNode, this is the element where the spry:region is attached to. Saves us a document.getElementById( "region" );
+			map = new google.maps.Map(
+				region.regionNode,
+				{
+					zoom:13,
+					// defensive coding is always a good practise, never expect the data to be there
+					center: new google.maps.LatLng( 
+								geo ? geo.latitude : 0, 
+								geo ? geo.longitude : 0 
+							),
+					backgroundColor: "#FFF",
+					mapTypeId: google.maps.MapTypeId.ROADMAP,
+					scrollwheel: false
+				}
+				
+			),
+			
+			// The actuall data for the map
+			data = dsSushi.data,
+			i = data ? data.length : 0,
+			
+			// some basic storage variables that i will probably use later on in the scripts, I declare them in advance as this is also how the
+			// javascript engine reads them, they will create the variables first, than fill them with the data when they are assigned in the code. 
+			markers = {}, tmp;
+		
+		// Now that we have added the map to the region, we can start addding markers, as you might have noticed I use a reverse while loop, they are the 
+		// one of the fastest loops in JavaScript, and actually is less typing than for( var i = 0, length = data.length; i < length; i++ ){
+		while( i-- ){
+			// store the data in a variable as we are using it more than one time, this will speed up references to the data location
+			tmp = data[i];
+			
+			// construct the markers for the map, but you probably would have guess that ;)
+			markers[ tmp.id ] = new google.maps.Marker({
+				position: new google.maps.LatLng(
+							// Oh, i actually did lower case lat lon here before, but it was actually camel case ._. yay for consistent data structures
+							tmp.Latitude,
+							tmp.Longitude
+						),
+				map: map,
+				title: tmp.Title
+			});
+		
+		}
+	}
+})
+</script>
+</body>
+</html>
